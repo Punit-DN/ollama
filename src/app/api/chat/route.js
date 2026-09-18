@@ -217,13 +217,32 @@ const ai = new GoogleGenAI({
 // CORS CONFIGURATION
 // ==========================================
 
-const ALLOWED_ORIGIN = "https://dndesigns.co.in";
+// const ALLOWED_ORIGIN = "https://dndesigns.co.in";
+
+const ALLOWED_ORIGINS = [
+  "https://dndesigns.co.in",
+  "https://www.dndesigns.co.in",
+  "http://localhost:3000",
+];
+
+// function corsHeaders(origin) {
+//   const allowedOrigin =
+//     origin === ALLOWED_ORIGIN
+//       ? origin
+//       : ALLOWED_ORIGIN;
+
+//   return {
+//     "Access-Control-Allow-Origin": allowedOrigin,
+//     "Access-Control-Allow-Methods": "POST, OPTIONS",
+//     "Access-Control-Allow-Headers": "Content-Type",
+//   };
+// }
+
 
 function corsHeaders(origin) {
-  const allowedOrigin =
-    origin === ALLOWED_ORIGIN
-      ? origin
-      : ALLOWED_ORIGIN;
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : "https://dndesigns.co.in";
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
