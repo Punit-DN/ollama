@@ -1,26 +1,23 @@
 (function () {
   "use strict";
 
-  // ==========================================
-  // CONFIGURATION
-  // ==========================================
+  // =========================================================
+  // CHATBOT API
+  // =========================================================
 
   const CHATBOT_API =
-  "https://aichatbot-nu-gules.vercel.app/api/chat";
+    "https://aichatbot-nu-gules.vercel.app/api/chat";
 
-  // ==========================================
-  // PREVENT DUPLICATE INITIALIZATION
-  // ==========================================
-
+  // Prevent loading the widget more than once
   if (window.__DN_CHATBOT_LOADED__) {
     return;
   }
 
   window.__DN_CHATBOT_LOADED__ = true;
 
-  // ==========================================
-  // CHAT HISTORY
-  // ==========================================
+  // =========================================================
+  // CHAT STATE
+  // =========================================================
 
   let messages = [
     {
@@ -32,13 +29,17 @@
   let isOpen = false;
   let isLoading = false;
 
-  // ==========================================
-  // CREATE STYLES
-  // ==========================================
+  // =========================================================
+  // STYLES
+  // =========================================================
 
   const style = document.createElement("style");
 
   style.textContent = `
+    /* =====================================================
+       CHAT BUTTON
+    ===================================================== */
+
     .dn-chatbot-button {
       position: fixed;
       right: 25px;
@@ -54,13 +55,17 @@
       color: #fff;
 
       font-size: 25px;
-
       cursor: pointer;
 
-      box-shadow: 0 8px 30px rgba(0,0,0,.2);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
 
       z-index: 999999;
     }
+
+
+    /* =====================================================
+       CHAT WINDOW
+    ===================================================== */
 
     .dn-chatbot-window {
       position: fixed;
@@ -74,10 +79,9 @@
       background: #fff;
 
       border-radius: 18px;
-
       overflow: hidden;
 
-      box-shadow: 0 15px 50px rgba(0,0,0,.2);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 
       display: none;
       flex-direction: column;
@@ -86,13 +90,24 @@
 
       border: 1px solid #e5e5e5;
 
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
+
+      /*
+        Important:
+        Prevent the chatbot itself from affecting
+        the website's scrolling.
+      */
+      overscroll-behavior: contain;
     }
 
+
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
     .dn-chatbot-header {
+      flex-shrink: 0;
+
       padding: 18px 20px;
 
       background: #111;
@@ -103,23 +118,26 @@
       justify-content: space-between;
     }
 
+
     .dn-chatbot-title {
       font-size: 17px;
       font-weight: 600;
     }
+
 
     .dn-chatbot-status {
       margin-top: 4px;
 
       font-size: 12px;
 
-      opacity: .8;
+      opacity: 0.8;
 
       display: flex;
       align-items: center;
 
       gap: 6px;
     }
+
 
     .dn-status-dot {
       width: 7px;
@@ -130,26 +148,40 @@
       border-radius: 50%;
     }
 
+
     .dn-chatbot-close {
       border: none;
 
       background: transparent;
-
       color: #fff;
 
       font-size: 28px;
-
       line-height: 1;
 
       cursor: pointer;
+
+      padding: 0;
     }
 
+
+    /* =====================================================
+       MESSAGES AREA
+       ===================================================== */
+
     .dn-chatbot-messages {
+      /*
+        VERY IMPORTANT
+
+        This allows the flex child to actually shrink
+        and create its own scrollbar.
+      */
       flex: 1;
+      min-height: 0;
 
       padding: 20px;
 
       overflow-y: auto;
+      overflow-x: hidden;
 
       display: flex;
       flex-direction: column;
@@ -157,7 +189,30 @@
       gap: 12px;
 
       background: #fafafa;
+
+      /*
+        Prevent scroll from passing to the website/body
+        when chatbot reaches the top/bottom.
+      */
+      overscroll-behavior: contain;
+
+      /*
+        Better touch scrolling on mobile.
+      */
+      touch-action: pan-y;
+
+      -webkit-overflow-scrolling: touch;
+
+      /*
+        Prevent scrollbar/layout issues.
+      */
+      scrollbar-width: thin;
     }
+
+
+    /* =====================================================
+       MESSAGE
+       ===================================================== */
 
     .dn-chat-message {
       max-width: 80%;
@@ -167,17 +222,20 @@
       border-radius: 14px;
 
       font-size: 14px;
-
       line-height: 1.5;
 
       word-break: break-word;
+
+      flex-shrink: 0;
     }
+
+
+    /* Assistant */
 
     .dn-assistant-message {
       align-self: flex-start;
 
       background: #fff;
-
       color: #222;
 
       border: 1px solid #e8e8e8;
@@ -185,17 +243,26 @@
       border-bottom-left-radius: 5px;
     }
 
+
+    /* User */
+
     .dn-user-message {
       align-self: flex-end;
 
       background: #111;
-
       color: #fff;
 
       border-bottom-right-radius: 5px;
     }
 
+
+    /* =====================================================
+       INPUT AREA
+       ===================================================== */
+
     .dn-chatbot-input-area {
+      flex-shrink: 0;
+
       padding: 12px;
 
       background: #fff;
@@ -206,6 +273,7 @@
 
       gap: 8px;
     }
+
 
     .dn-chatbot-input {
       flex: 1;
@@ -223,9 +291,19 @@
       font-size: 14px;
 
       min-width: 0;
+
+      box-sizing: border-box;
     }
 
+
+    .dn-chatbot-input:focus {
+      border-color: #bbb;
+    }
+
+
     .dn-chatbot-send {
+      flex-shrink: 0;
+
       width: 42px;
       height: 42px;
 
@@ -234,7 +312,6 @@
       border-radius: 10px;
 
       background: #111;
-
       color: #fff;
 
       cursor: pointer;
@@ -242,11 +319,17 @@
       font-size: 17px;
     }
 
+
     .dn-chatbot-send:disabled {
-      opacity: .4;
+      opacity: 0.4;
 
       cursor: not-allowed;
     }
+
+
+    /* =====================================================
+       TYPING INDICATOR
+    ===================================================== */
 
     .dn-chatbot-typing {
       display: flex;
@@ -255,6 +338,7 @@
 
       width: fit-content;
     }
+
 
     .dn-chatbot-typing span {
       width: 6px;
@@ -267,20 +351,23 @@
       animation: dnChatTyping 1.2s infinite ease-in-out;
     }
 
+
     .dn-chatbot-typing span:nth-child(2) {
-      animation-delay: .15s;
+      animation-delay: 0.15s;
     }
 
+
     .dn-chatbot-typing span:nth-child(3) {
-      animation-delay: .3s;
+      animation-delay: 0.3s;
     }
+
 
     @keyframes dnChatTyping {
       0%,
       60%,
       100% {
         transform: translateY(0);
-        opacity: .4;
+        opacity: 0.4;
       }
 
       30% {
@@ -288,6 +375,11 @@
         opacity: 1;
       }
     }
+
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
 
     @media (max-width: 500px) {
 
@@ -302,6 +394,7 @@
         max-height: 650px;
       }
 
+
       .dn-chatbot-button {
         right: 18px;
         bottom: 18px;
@@ -311,9 +404,10 @@
 
   document.head.appendChild(style);
 
-  // ==========================================
+
+  // =========================================================
   // CHAT BUTTON
-  // ==========================================
+  // =========================================================
 
   const button = document.createElement("button");
 
@@ -328,9 +422,10 @@
 
   document.body.appendChild(button);
 
-  // ==========================================
+
+  // =========================================================
   // CHAT WINDOW
-  // ==========================================
+  // =========================================================
 
   const chatWindow = document.createElement("div");
 
@@ -359,7 +454,9 @@
 
     </div>
 
+
     <div class="dn-chatbot-messages"></div>
+
 
     <div class="dn-chatbot-input-area">
 
@@ -381,9 +478,10 @@
 
   document.body.appendChild(chatWindow);
 
-  // ==========================================
+
+  // =========================================================
   // ELEMENTS
-  // ==========================================
+  // =========================================================
 
   const closeButton =
     chatWindow.querySelector(
@@ -405,22 +503,65 @@
       ".dn-chatbot-send"
     );
 
-  // ==========================================
+
+  // =========================================================
+  // IMPORTANT SCROLL PROTECTION
+  // =========================================================
+
+  /*
+    Prevent wheel events from bubbling to the website.
+
+    This is especially useful when the chatbot reaches
+    the top/bottom of its own scroll area.
+  */
+
+  messagesContainer.addEventListener(
+    "wheel",
+    function (event) {
+      event.stopPropagation();
+    },
+    {
+      passive: true,
+    }
+  );
+
+
+  /*
+    Prevent touch scrolling from affecting the website
+    when the user is interacting with chatbot messages.
+  */
+
+  messagesContainer.addEventListener(
+    "touchmove",
+    function (event) {
+      event.stopPropagation();
+    },
+    {
+      passive: true,
+    }
+  );
+
+
+  // =========================================================
   // RENDER MESSAGES
-  // ==========================================
+  // =========================================================
 
   function renderMessages() {
+
     messagesContainer.innerHTML = "";
 
     messages.forEach(function (message) {
+
       const messageElement =
         document.createElement("div");
 
       messageElement.className =
         "dn-chat-message " +
-        (message.role === "user"
-          ? "dn-user-message"
-          : "dn-assistant-message");
+        (
+          message.role === "user"
+            ? "dn-user-message"
+            : "dn-assistant-message"
+        );
 
       messageElement.textContent =
         message.content;
@@ -430,15 +571,21 @@
       );
     });
 
+    /*
+      Always scroll chatbot to latest message.
+    */
+
     messagesContainer.scrollTop =
       messagesContainer.scrollHeight;
   }
 
-  // ==========================================
+
+  // =========================================================
   // TYPING INDICATOR
-  // ==========================================
+  // =========================================================
 
   function showTyping() {
+
     const typing =
       document.createElement("div");
 
@@ -451,35 +598,44 @@
       <span></span>
     `;
 
-    messagesContainer.appendChild(typing);
+    messagesContainer.appendChild(
+      typing
+    );
 
     messagesContainer.scrollTop =
       messagesContainer.scrollHeight;
   }
 
-  // ==========================================
+
+  // =========================================================
   // OPEN CHAT
-  // ==========================================
+  // =========================================================
 
-  button.addEventListener("click", function () {
-    isOpen = true;
+  button.addEventListener(
+    "click",
+    function () {
 
-    button.style.display = "none";
+      isOpen = true;
 
-    chatWindow.style.display = "flex";
+      button.style.display = "none";
 
-    renderMessages();
+      chatWindow.style.display = "flex";
 
-    input.focus();
-  });
+      renderMessages();
 
-  // ==========================================
+      input.focus();
+    }
+  );
+
+
+  // =========================================================
   // CLOSE CHAT
-  // ==========================================
+  // =========================================================
 
   closeButton.addEventListener(
     "click",
     function () {
+
       isOpen = false;
 
       chatWindow.style.display = "none";
@@ -488,56 +644,88 @@
     }
   );
 
-  // ==========================================
+
+  // =========================================================
   // SEND MESSAGE
-  // ==========================================
+  // =========================================================
 
   async function sendMessage() {
+
     const userMessage =
       input.value.trim();
+
+    /*
+      Don't send empty messages.
+    */
 
     if (!userMessage || isLoading) {
       return;
     }
 
+
     // Add user message
+
     messages.push({
       role: "user",
       content: userMessage,
     });
 
+
+    // Clear input
+
     input.value = "";
+
+
+    // Render user message
 
     renderMessages();
 
-    // Loading
+
+    // Loading state
+
     isLoading = true;
 
     sendButton.disabled = true;
 
     input.disabled = true;
 
+
+    // Show typing
+
     showTyping();
 
+
     try {
+
+      // =====================================================
+      // API REQUEST
+      // =====================================================
+
       const response =
         await fetch(CHATBOT_API, {
+
           method: "POST",
 
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
 
           body: JSON.stringify({
-            messages: messages.slice(-15),
+
+            messages:
+              messages.slice(-15),
+
           }),
+
         });
+
 
       const data =
         await response.json();
 
+
       // Remove typing indicator
+
       const typing =
         messagesContainer.querySelector(
           ".dn-chatbot-typing"
@@ -546,29 +734,44 @@
       if (typing) {
         typing.remove();
       }
+
+
+      // Check API response
 
       if (
         !response.ok ||
         !data.success
       ) {
+
         throw new Error(
           data.error ||
-            "Something went wrong."
+          "Something went wrong."
         );
       }
 
+
       // Add AI response
+
       messages.push({
         role: "assistant",
         content: data.message,
       });
 
+
+      // Render messages
+
       renderMessages();
+
+
     } catch (error) {
+
       console.error(
         "DN Chatbot Error:",
         error
       );
+
+
+      // Remove typing indicator
 
       const typing =
         messagesContainer.querySelector(
@@ -578,6 +781,9 @@
       if (typing) {
         typing.remove();
       }
+
+
+      // Show error
 
       messages.push({
         role: "assistant",
@@ -585,8 +791,14 @@
           "Sorry, something went wrong. Please try again.",
       });
 
+
       renderMessages();
+
+
     } finally {
+
+      // Reset loading state
+
       isLoading = false;
 
       sendButton.disabled = false;
@@ -597,26 +809,30 @@
     }
   }
 
-  // ==========================================
+
+  // =========================================================
   // SEND BUTTON
-  // ==========================================
+  // =========================================================
 
   sendButton.addEventListener(
     "click",
     sendMessage
   );
 
-  // ==========================================
+
+  // =========================================================
   // ENTER KEY
-  // ==========================================
+  // =========================================================
 
   input.addEventListener(
     "keydown",
     function (event) {
+
       if (
         event.key === "Enter" &&
         !event.shiftKey
       ) {
+
         event.preventDefault();
 
         sendMessage();
@@ -624,9 +840,11 @@
     }
   );
 
-  // ==========================================
+
+  // =========================================================
   // INITIAL RENDER
-  // ==========================================
+  // =========================================================
 
   renderMessages();
+
 })();
