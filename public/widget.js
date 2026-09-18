@@ -6,7 +6,7 @@
   // ==========================================
 
   const CHATBOT_API =
-    "https://YOUR-CHATBOT-VERCEL-DOMAIN.vercel.app/api/chat";
+  "https://aichatbot-nu-gules.vercel.app/api/chat";
 
   // ==========================================
   // PREVENT DUPLICATE INITIALIZATION
